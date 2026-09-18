@@ -1,141 +1,254 @@
 # NHS Hospital Performance Analytics
 
-End-to-end NHS hospital performance analytics project using Python, SQL, Power BI, Docker, CI/CD and Cloud.
+End-to-end healthcare analytics portfolio project using **Python, PostgreSQL, SQL, Power BI, Docker, Git and GitHub** to analyse NHS A&E performance data and build a reproducible reporting pipeline.
 
 ## Project Overview
 
-This project analyses NHS A&E performance data from April 2024 to August 2026. The current phase focuses on demand, 4-hour performance, emergency admissions, provider-level variation, and data quality. The wider capstone will later extend into RTT waiting-list analysis, WLMDS demographic analysis, PostgreSQL, Power BI, CI/CD and cloud deployment.
+This project currently analyses NHS A&E performance from **April 2024 to August 2026**. It covers national demand trends, 4-hour performance, emergency admissions, provider benchmarking, Type 1 major A&E analysis, data-quality validation, SQL analysis and an interactive Power BI dashboard.
 
-## Objectives
+The wider capstone will extend the same pipeline to **RTT waiting lists**, **WLMDS demographic/inequality analysis**, forecasting, automated testing, CI/CD and cloud deployment.
 
-- Analyse monthly A&E demand trends.
-- Measure 4-hour performance over time.
-- Analyse emergency admissions through A&E.
-- Compare provider-level performance.
-- Investigate whether higher demand is associated with lower 4-hour performance.
-- Build reusable, validated datasets for SQL and dashboarding.
-- Develop the project into an end-to-end analytics pipeline with Docker, CI/CD and cloud deployment.
+## End-to-End Pipeline
+
+```text
+NHS raw CSV files
+        ↓
+Python / Pandas cleaning and validation
+        ↓
+Processed analytical datasets
+        ↓
+PostgreSQL in Docker
+        ↓
+SQL analysis and provider benchmarking
+        ↓
+Power BI data model + DAX
+        ↓
+Interactive portfolio dashboard
+        ↓
+Git / GitHub version control
+```
 
 ## Current A&E Scope
 
-- Period: April 2024 to August 2026
-- Monthly files: 29
-- Provider-month rows: 5,714
-- Unique organisation codes: 207
-- Type 1 providers included in comparative analysis: 115
+- Period: **April 2024 to August 2026**
+- Monthly files: **29**
+- Provider-month rows: **5,714**
+- Unique organisation codes observed: **207**
+- PostgreSQL analytical tables: **5**
+- Power BI report pages: **3**
+- Provider identity standardised in SQL using `org_code` and the latest observed organisation name
 
 ## Key Findings
 
 ### Demand
 
-- A&E attendances increased by 4.72% between April 2024 and August 2026.
-- Highest monthly attendance: July 2026 — 2,411,415.
-- Lowest monthly attendance: February 2025 — 2,008,463.
-- After adjusting for month length, the highest average daily demand occurred in June 2026 at approximately 78,742 attendances per day.
-- The lowest average daily demand occurred in August 2024 at approximately 67,298 attendances per day.
+- A&E attendances increased by **4.72%** between April 2024 and August 2026.
+- Highest monthly attendance: **July 2026 — 2,411,415**.
+- Lowest monthly attendance: **February 2025 — 2,008,463**.
+- Highest average daily demand: **June 2026 — approximately 78,742 attendances/day**.
+- Lowest average daily demand: **August 2024 — approximately 67,298 attendances/day**.
 
 ### 4-Hour Performance
 
-- April 2024 performance: 73.97%.
-- August 2026 performance: 74.55%.
-- Overall change: +0.58 percentage points.
-- Best month: March 2026 — 76.63%.
-- Worst month: December 2024 — 70.46%.
+- April 2024: **73.97%**
+- August 2026: **74.55%**
+- Change: **+0.58 percentage points**
+- Best month: **March 2026 — 76.63%**
+- Worst month: **December 2024 — 70.46%**
 
 ### Emergency Admissions
 
-- Highest admission rate: January 2025 — 19.04%.
-- Lowest admission rate: June 2026 — 16.85%.
-- Admission rate fell from 18.67% in April 2024 to 17.34% in August 2026, a decrease of 1.33 percentage points.
+- Highest admission rate: **January 2025 — 19.04%**
+- Lowest admission rate: **June 2026 — 16.85%**
+- Admission rate changed from **18.67% in April 2024** to **17.34% in August 2026**, a fall of **1.33 percentage points**.
 
 ### Month-on-Month Movement
 
-- Largest attendance increase: March 2026 — +15.06%.
-- Largest attendance decrease: February 2026 — -8.59%.
-- Largest 4-hour performance improvement: March 2026 — +3.13 percentage points.
-- Largest 4-hour performance deterioration: September 2024 — -2.12 percentage points.
+- Largest attendance increase: **March 2026 — +15.06%**
+- Largest attendance decrease: **February 2026 — -8.59%**
+- Largest 4-hour performance improvement: **March 2026 — +3.13 pp**
+- Largest deterioration: **September 2024 — -2.12 pp**
 
-### Provider Analysis
+## Provider & Type 1 Analysis
 
-Initial analysis across all A&E department types showed a moderate negative correlation of -0.568 between attendance volume and 4-hour performance. However, when the comparison was restricted to Type 1 major A&E departments, the correlation fell to 0.028.
+An initial all-department provider analysis showed a moderate negative correlation of **-0.568** between demand and 4-hour performance.
 
-This suggests that the original relationship was influenced by differences in department type and service configuration rather than patient volume alone. Among high-volume Type 1 providers, performance varied substantially, indicating that demand alone does not explain performance differences.
+After restricting the comparison to **Type 1 major A&E departments**, the relationship largely disappeared. The Python analysis produced a correlation of approximately **0.028**, while the SQL implementation produced approximately **0.038** after provider-name standardisation.
+
+This is an important analytical result: **higher demand alone does not explain provider performance**. The stronger all-department relationship was influenced by differences in department type and service configuration.
+
+Examples from the high-volume Type 1 comparison:
+
+- Maidstone and Tunbridge Wells: **78.55%**
+- Calderdale and Huddersfield: **78.01%**
+- Nottingham University Hospitals: **46.79%**
+- University Hospitals of North Midlands: **48.02%**
+
+These comparisons are descriptive and should not be interpreted as causal assessments of provider quality.
+
+## SQL & PostgreSQL
+
+Processed A&E datasets are loaded into PostgreSQL running in Docker.
+
+The SQL analysis includes:
+
+- Data validation and row-count reconciliation
+- Provider-name consistency checks
+- Canonical provider dimension using `org_code`
+- CTEs
+- `RANK()`
+- `LAG()`
+- `PERCENTILE_CONT()`
+- `CORR()`
+- Weighted performance calculations
+- Provider ranking
+- High-volume benchmarking
+- Meaningful month-on-month change analysis
+
+A reusable SQL script is available at:
+
+```text
+sql/04_provider_analysis.sql
+```
+
+## Power BI Dashboard
+
+The Power BI report connects directly to PostgreSQL and uses a star-style model with:
+
+- `DateTable`
+- `provider_dimension`
+- `ae_monthly_summary`
+- `ae_provider_month`
+- `ae_type1_provider_month`
+
+Key DAX measures include:
+
+- Total A&E Attendances
+- Total Over 4 Hours
+- 4 Hour Performance %
+- Admissions via A&E
+- Admission Rate %
+- Provider A&E Attendances
+- Provider 4 Hour Performance %
+- Type 1 Attendances
+- Type 1 Performance %
+
+The report contains three pages:
+
+### Executive Overview
+
+National A&E KPIs, monthly demand and 4-hour performance trends, with Year and Month slicers.
+
+![Executive Overview](figures/powerbi/executive_overview.png)
+
+### Provider Performance Analysis
+
+Provider-level KPIs, Top 10 busiest providers, performance comparison and demand-vs-performance scatter analysis.
+
+![Provider Performance](figures/powerbi/provider_performance.png)
+
+### Type 1 A&E Benchmarking
+
+Type 1 KPIs, high-volume provider comparison, performance benchmarking, scatter analysis and monthly performance trends.
+
+![Type 1 Benchmarking](figures/powerbi/type1_benchmarking.png)
+
+The Power BI file is included in the repository:
+
+[Open the Power BI report file](powerbi/nhs_ae_dashboard.pbix)
+
+## Validation
+
+Power BI measures were checked against the Python and SQL outputs.
+
+Example — **April 2024**:
+
+- Total A&E Attendances: **2,163,149**
+- Total Over 4 Hours: **563,068**
+- 4 Hour Performance: **73.97%**
+- Admissions via A&E: **403,934**
+- Admission Rate: **18.67%**
+
+Provider-level and Type 1 measures were also checked for mathematical consistency under Power BI filters.
 
 ## Data Quality Work
 
-The project includes several real-world data quality checks and fixes:
+The project includes real-world data-quality handling such as:
 
-- Inconsistent TOTAL row labels across monthly files.
-- TOTAL rows appearing in different columns.
-- Inconsistent file naming conventions, including `Nov-25` instead of a full month-year name.
-- Validation of national totals against NHS source totals.
-- Duplicate provider-month checks.
-- Missing-rate validation for zero-attendance provider rows.
-- Daily normalisation to account for different month lengths.
+- Inconsistent `TOTAL` row labels across monthly files
+- TOTAL rows appearing in different source columns
+- Inconsistent filename conventions
+- National-total validation against NHS source totals
+- Duplicate provider-month checks
+- Zero-attendance handling
+- Missing-rate validation
+- Month-length normalisation
+- Provider-name changes over time
+- Stable provider analysis using organisation codes
 
 ## Technology Stack
 
-### Current
+### Implemented
 
 - Python
 - Pandas
 - NumPy
 - Matplotlib
 - Jupyter Notebook
+- PostgreSQL
+- SQL
+- Power BI
+- DAX
 - Docker
 - Git
 - GitHub
 
-### Planned
+### Planned for the Wider Capstone
 
-- PostgreSQL
-- SQL
-- Power BI
 - Automated testing
 - GitHub Actions CI/CD
 - Cloud deployment
-- Forecasting / machine learning in the final capstone
+- Forecasting / machine learning
+- RTT waiting-list analytics
+- WLMDS demographic and inequality analytics
 
 ## Project Structure
 
 ```text
 nhs-hospital-performance-analytics/
 ├── data/
-│   ├── raw/                  # Ignored by Git
+│   ├── raw/                         # Ignored by Git
 │   └── processed/
-│       ├── ae_monthly_summary.csv
-│       ├── ae_provider_month.csv
-│       ├── ae_provider_summary.csv
-│       ├── ae_type1_provider_month.csv
-│       └── ae_type1_provider_summary.csv
 ├── figures/
-│   └── ae/
+│   ├── ae/
+│   └── powerbi/
+│       ├── executive_overview.png
+│       ├── provider_performance.png
+│       └── type1_benchmarking.png
 ├── notebooks/
-│   └── 01_ae_data_understanding.ipynb
-├── sql/                      # Planned
-├── src/                      # Planned
-├── tests/                    # Planned
+│   ├── 01_ae_data_understanding.ipynb
+│   └── 02_ae_sql_analysis.ipynb
+├── powerbi/
+│   └── nhs_ae_dashboard.pbix
+├── sql/
+│   └── 04_provider_analysis.sql
+├── src/
+├── tests/
+├── docker-compose.yml
+├── .env.example
 ├── .gitignore
 └── README.md
 ```
 
-## Selected Visuals
+## Selected Python Visuals
 
 ### Monthly A&E Attendances
 
 ![Monthly A&E Attendances](figures/ae/monthly_ae_attendances.png)
 
-### Average Daily A&E Attendances
-
-![Average Daily A&E Attendances](figures/ae/average_daily_ae_attendances.png)
-
 ### 4-Hour Performance
 
 ![4-Hour Performance](figures/ae/four_hour_performance.png)
-
-### A&E Admission Rate
-
-![A&E Admission Rate](figures/ae/ae_admission_rate.png)
 
 ### Demand vs 4-Hour Performance
 
@@ -147,30 +260,31 @@ nhs-hospital-performance-analytics/
 
 ## Next Phase
 
-The next phase will move the processed A&E datasets into PostgreSQL and answer business questions using SQL. Planned SQL work includes:
+The A&E mini-project is now complete as an end-to-end analytics workflow.
 
-- Monthly trend analysis.
-- Provider ranking.
-- Best and worst performing organisations.
-- CTEs and window functions.
-- Month-on-month comparisons.
-- Provider benchmarking.
+Next, the wider capstone will continue with:
 
-After SQL, the project will move into Power BI dashboard development, followed by automated testing, GitHub Actions CI/CD, Dockerised services and cloud deployment.
+1. RTT Waiting List Analysis
+2. WLMDS Health Inequalities Analysis
+3. Integration of A&E + RTT + WLMDS
+4. Forecasting / machine learning
+5. Automated tests
+6. GitHub Actions CI/CD
+7. Cloud deployment
 
 ## Final Capstone Direction
 
-The wider project will evolve into an NHS Hospital Performance & Waiting List Intelligence Platform by integrating:
+The final goal is an **NHS Hospital Performance & Waiting List Intelligence Platform** integrating:
 
-- A&E performance data.
-- RTT waiting-list data.
-- WLMDS demographic and inequality data.
-- PostgreSQL.
-- Power BI.
-- Forecasting / machine learning.
-- Docker.
-- CI/CD.
-- Cloud infrastructure.
+- A&E performance
+- RTT waiting lists
+- WLMDS demographic and inequality data
+- PostgreSQL
+- Power BI
+- Forecasting / machine learning
+- Docker
+- CI/CD
+- Cloud infrastructure
 
 ## Disclaimer
 
