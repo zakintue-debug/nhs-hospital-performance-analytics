@@ -2,6 +2,19 @@
 
 End-to-end healthcare analytics portfolio project using **Python, PostgreSQL, SQL, Power BI, Docker, Git and GitHub** to analyse NHS A&E performance data and build a reproducible reporting pipeline.
 
+## Recruiter Quick View
+
+This project demonstrates the full workflow I use as a Data Analyst: **source data → cleaning and validation → SQL modelling and analysis → Power BI reporting → business interpretation**.
+
+- **29 monthly NHS files** processed covering April 2024–August 2026
+- **5,714 provider-month rows** across **207 organisation codes**
+- PostgreSQL analysis using CTEs, window functions, ranking, percentiles and correlation
+- **3-page Power BI dashboard** with DAX measures and provider benchmarking
+- Cross-validation of key metrics between Python, SQL and Power BI
+- Real-world data-quality handling including inconsistent labels, filenames and provider-name changes
+- Analytical finding: the apparent demand/performance relationship changed materially after controlling for A&E department type
+
+This is my primary portfolio project for **Data Analyst / BI Analyst / Reporting Analyst** roles.
 ## Project Overview
 
 This project currently analyses NHS A&E performance from **April 2024 to August 2026**. It covers national demand trends, 4-hour performance, emergency admissions, provider benchmarking, Type 1 major A&E analysis, data-quality validation, SQL analysis and an interactive Power BI dashboard.
