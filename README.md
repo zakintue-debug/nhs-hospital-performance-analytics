@@ -2,6 +2,16 @@
 
 End-to-end healthcare analytics portfolio project using **Python, PostgreSQL, SQL, Power BI, Docker, Git and GitHub** to analyse NHS A&E performance data and build a reproducible reporting pipeline.
 
+## Measurement scope and review status
+
+**The current processed attendance and over-four-hour columns exclude separately reported booked attendances.** Figures below describe this non-booked population, not the complete published NHS national headline total. The admissions-to-attendance ratio also needs a matched-population definition before being used as an admission probability.
+
+The Power BI Type 1 Top 10 selection requires correction: select providers by **Type 1 Attendances**, rather than an aggregation of provider name. Existing dashboard images retain the earlier selection and should not be used as verified busiest-provider rankings.
+
+Python and SQL correlations currently use different provider-name grouping/cohort rules. Use stable organisation codes and an identical minimum-month cohort before comparing their coefficients. These correlations are descriptive and do not establish what causes performance differences.
+
+These issues are documented openly while the analysis is being improved; the current dashboard is an analytical prototype.
+
 ## Recruiter Quick View
 
 This project demonstrates the full workflow I use as a Data Analyst: **source data → cleaning and validation → SQL modelling and analysis → Power BI reporting → business interpretation**.
@@ -88,7 +98,7 @@ An initial all-department provider analysis showed a moderate negative correlati
 
 After restricting the comparison to **Type 1 major A&E departments**, the relationship largely disappeared. The Python analysis produced a correlation of approximately **0.028**, while the SQL implementation produced approximately **0.038** after provider-name standardisation.
 
-This is an important analytical result: **higher demand alone does not explain provider performance**. The stronger all-department relationship was influenced by differences in department type and service configuration.
+The near-zero Type 1 association contrasts with the all-department association. This is descriptive evidence that department mix and cohort definition matter; it does not identify causal explanations of provider performance.
 
 Examples from the high-volume Type 1 comparison:
 
@@ -191,7 +201,7 @@ The project includes real-world data-quality handling such as:
 - Inconsistent `TOTAL` row labels across monthly files
 - TOTAL rows appearing in different source columns
 - Inconsistent filename conventions
-- National-total validation against NHS source totals
+- Internal reconciliation of processed totals; external headline reconciliation must use matching booked/non-booked definitions
 - Duplicate provider-month checks
 - Zero-attendance handling
 - Missing-rate validation
@@ -245,8 +255,6 @@ nhs-hospital-performance-analytics/
 │   └── nhs_ae_dashboard.pbix
 ├── sql/
 │   └── 04_provider_analysis.sql
-├── src/
-├── tests/
 ├── docker-compose.yml
 ├── .env.example
 ├── .gitignore
@@ -273,7 +281,7 @@ nhs-hospital-performance-analytics/
 
 ## Next Phase
 
-The A&E mini-project is now complete as an end-to-end analytics workflow.
+The A&E prototype connects preparation, SQL analysis and dashboard reporting. Measurement definitions, consistent provider cohorts and Power BI Top N selection remain under correction before treating it as a validated release.
 
 Next, the wider capstone will continue with:
 
