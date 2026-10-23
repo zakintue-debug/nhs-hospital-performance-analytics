@@ -310,3 +310,16 @@ The final goal is an **NHS Hospital Performance & Waiting List Intelligence Plat
 ## Disclaimer
 
 This is a portfolio and learning project based on publicly available NHS data. Analytical relationships shown here should not be interpreted as proof of causation. Provider performance may be influenced by factors not included in the current datasets, including patient acuity, staffing, capacity, case mix and service configuration.
+
+
+## Reproduce stable-code cohort checks
+
+From the repository root, run:
+
+```bash
+python scripts/validate_provider_cohorts.py --min-months 24
+```
+
+Python 3.9+ standard library only. The script validates unique provider-month keys and count bounds, groups by organisation code, requires at least 24 positive-attendance months, calculates weighted performance, correlates mean monthly attendance with performance and returns the ten busiest eligible providers by total attendance. Different departments can have different eligible cohorts; these are not paired-provider estimates.
+
+With the currently committed processed CSVs: 180 eligible all-department providers (correlation approximately -0.574) and 121 Type 1 providers (approximately 0.038). The Type 1 highest-volume eligible provider is University Hospitals Birmingham (RRK), 994,229 attendances. This executable check does not repair the existing PBIX visuals or reconcile booked attendances to official national totals.
