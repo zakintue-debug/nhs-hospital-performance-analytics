@@ -6,21 +6,26 @@ import math
 from collections import defaultdict
 from pathlib import Path
 
-def analyse(path, attendance, over, min_months):
+def load_groups(path, attendance, over):
     groups = defaultdict(list)
     keys = set()
-    for row in csv.DictReader(path.open(encoding="utf-8-sig")):
-        key = (row["Org Code"], row["Month"])
-        if key in keys:
-            raise ValueError(f"Duplicate provider-month: {key}")
-        keys.add(key)
-        a, o = float(row[attendance]), float(row[over])
-        if not (math.isfinite(a) and math.isfinite(o) and 0 <= o <= a):
-            raise ValueError(f"Invalid counts: {key}")
-        groups[row["Org Code"]].append((row["Month"], row["Org name"], a, o))
+    with path.open(encoding="utf-8-sig", newline="") as source:
+        for row in csv.DictReader(source):
+            key = (row["Org Code"], row["Month"])
+            if key in keys:
+                raise ValueError(f"Duplicate provider-month: {key}")
+            keys.add(key)
+            a, o = float(row[attendance]), float(row[over])
+            if not (math.isfinite(a) and math.isfinite(o) and 0 <= o <= a):
+                raise ValueError(f"Invalid counts: {key}")
+            groups[row["Org Code"]].append((row["Month"], row["Org name"], a, o))
+    return groups
+
+
+def summarise(groups, min_months, common=None):
     providers = []
     for org, rows in groups.items():
-        active = [r for r in rows if r[2] > 0]
+        active = [r for r in rows if r[2] > 0 and (common is None or (org, r[0]) in common)]
         if len(active) < min_months:
             continue
         total = sum(r[2] for r in active)
@@ -34,8 +39,12 @@ def analyse(path, attendance, over, min_months):
         mx, my = sum(xs)/len(xs), sum(ys)/len(ys)
         den = math.sqrt(sum((x-mx)**2 for x in xs)*sum((y-my)**2 for y in ys))
         corr = sum((x-mx)*(y-my) for x,y in zip(xs,ys))/den if den else None
-    return dict(provider_count=len(providers), correlation_mean_monthly_attendance_vs_weighted_performance=corr,
+    return dict(provider_count=len(providers), provider_months=sum(p["months"] for p in providers), correlation_mean_monthly_attendance_vs_weighted_performance=corr,
                 top_10=sorted(providers, key=lambda p:(-p["attendances"],p["org_code"]))[:10])
+
+def analyse(path, attendance, over, min_months):
+    return summarise(load_groups(path, attendance, over), min_months)
+
 
 def main():
     p=argparse.ArgumentParser()
@@ -44,10 +53,25 @@ def main():
     args=p.parse_args()
     if args.min_months < 1:
         p.error("--min-months must be positive")
-    print(json.dumps(dict(scope="Non-booked attendance columns; positive-attendance months; stable organisation code",
-        min_months=args.min_months,
-        all_departments=analyse(args.data/"ae_provider_month.csv","Total A&E Attendances","Total Over 4 Hours",args.min_months),
-        type1=analyse(args.data/"ae_type1_provider_month.csv","Type 1 Attendances","Type 1 Over 4 Hours",args.min_months)),indent=2))
+    print(json.dumps(compare(args.data, args.min_months), indent=2))
+
+
+def compare(data, min_months=24):
+    all_depts = load_groups(data / "ae_provider_month.csv", "Total A&E Attendances", "Total Over 4 Hours")
+    type1 = load_groups(data / "ae_type1_provider_month.csv", "Type 1 Attendances", "Type 1 Over 4 Hours")
+
+    def positive_keys(groups):
+        return {(code, month) for code, rows in groups.items()
+                for month, _, count, _ in rows if count > 0}
+
+    common = positive_keys(all_depts) & positive_keys(type1)
+    return dict(scope="Non-booked attendance columns; positive-attendance months; stable organisation code",
+                min_months=min_months,
+                all_departments=summarise(all_depts, min_months),
+                type1=summarise(type1, min_months),
+                matched_all=summarise(all_depts, min_months, common),
+                matched_type1=summarise(type1, min_months, common))
+
 
 if __name__ == "__main__":
     main()
