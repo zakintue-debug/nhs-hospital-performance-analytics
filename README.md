@@ -1,325 +1,75 @@
 # NHS Hospital Performance Analytics
 
-End-to-end healthcare analytics portfolio project using **Python, PostgreSQL, SQL, Power BI, Docker, Git and GitHub** to analyse NHS A&E performance data and build a reproducible reporting pipeline.
+An independent reporting prototype using NHS England’s monthly A&E Attendances and Emergency Admissions data. It explores how demand and four-hour performance vary across months and providers, and how the choice of providers affects that comparison.
 
-## Measurement scope and review status
+The [processed data](data/processed) span April 2024 to August 2026: 29 months, 5,714 provider-month records in each departmental extract and 207 organisation codes before eligibility checks. The attendance and over-four-hour counts exclude separately reported booked attendances. Comparisons to published NHS headline totals require the same reporting definition and release version.
 
-**The current processed attendance and over-four-hour columns exclude separately reported booked attendances.** Figures below describe this non-booked population, not the complete published NHS national headline total. The admissions-to-attendance ratio also needs a matched-population definition before being used as an admission probability.
+## How to inspect the project
 
-The Power BI Type 1 Top 10 selection requires correction: select providers by **Type 1 Attendances**, rather than an aggregation of provider name. Existing dashboard images retain the earlier selection and should not be used as verified busiest-provider rankings.
+| Deliverable | What the repository demonstrates |
+|---|---|
+| [Python preparation notebook](notebooks/01_ae_data_understanding.ipynb) | Reads monthly files, handles variations in total-row labels, prepares counts and exports data and charts. Historical notebook results use earlier provider grouping rules. |
+| [Python cohort validator](scripts/validate_provider_cohorts.py) | Checks unique organisation-code/month keys and valid attendance and breach counts. Calculates weighted provider performance, correlations and attendance rankings on the committed CSVs. |
+| [PostgreSQL queries](sql/04_provider_analysis.sql) and [SQL notebook](notebooks/02_ae_sql_analysis.ipynb) | Inspect the provider aggregation, attendance ranking and Type 1 correlation query. [Docker Compose](docker-compose.yml) supplies local database configuration. Live PostgreSQL execution and end-to-end refresh remain to be independently checked. |
+| [Power BI report](powerbi/nhs_ae_dashboard.pbix) | Three saved pages cover the executive overview, provider performance and Type 1 benchmarking. The previews below are historical exports. Two Type 1 chart filters require repair. |
 
-Python and SQL correlations currently use different provider-name grouping/cohort rules. Use stable organisation codes and an identical minimum-month cohort before comparing their coefficients. These correlations are descriptive and do not establish what causes performance differences.
+## What the provider comparison shows
 
-These issues are documented openly while the analysis is being improved; the current dashboard is an analytical prototype.
+The unit of comparison is a **provider**, identified by organisation code so a change in display name does not split its records. For each eligible provider, demand is mean monthly attendance over qualifying months. Four-hour performance is weighted by attendance: **100 × (sum of attendances − sum over four hours) / sum of attendances**. Pearson’s *r* compares those two provider-level measures.
 
-## Recruiter Quick View
+| Eligibility rule | All departments | Type 1 major A&E |
+|---|---:|---:|
+| At least 24 positive-attendance months in each extract independently | 180 providers, *r* = −0.574 | 121 providers, *r* = +0.038 |
+| Same providers and months in both extracts | 121 providers, *r* = +0.159 | 121 providers, *r* = +0.038 |
 
-This project demonstrates the full workflow I use as a Data Analyst: **source data → cleaning and validation → SQL modelling and analysis → Power BI reporting → business interpretation**.
+For the matched check, join the extracts on organisation code and month, retain rows with positive attendance in both, then keep providers with at least 24 such months. Recalculate both measures on the same **3,507 provider-months**. Changing the comparison population changes even the sign of the all-department coefficient. The original difference therefore cannot be attributed solely to restricting activity to Type 1.
 
-- **29 monthly NHS files** processed covering April 2024–August 2026
-- **5,714 provider-month rows** across **207 organisation codes**
-- PostgreSQL analysis using CTEs, window functions, ranking, percentiles and correlation
-- **3-page Power BI dashboard** with DAX measures and provider benchmarking
-- Cross-validation of key metrics between Python, SQL and Power BI
-- Real-world data-quality handling including inconsistent labels, filenames and provider-name changes
-- Analytical finding: the apparent demand/performance relationship changed materially after controlling for A&E department type
+These are descriptive results from processed portfolio data. Matching addresses one comparability issue. It does not resolve booked attendance coverage, organisational reorganisations, case mix or other differences between services, establish causation or constitute an official NHS conclusion.
 
-This is my primary portfolio project for **Data Analyst / BI Analyst / Reporting Analyst** roles.
-## Project Overview
-
-This project currently analyses NHS A&E performance from **April 2024 to August 2026**. It covers national demand trends, 4-hour performance, emergency admissions, provider benchmarking, Type 1 major A&E analysis, data-quality validation, SQL analysis and an interactive Power BI dashboard.
-
-The wider capstone will extend the same pipeline to **RTT waiting lists**, **WLMDS demographic/inequality analysis**, forecasting, automated testing, CI/CD and cloud deployment.
-
-## End-to-End Pipeline
-
-```text
-NHS raw CSV files
-        ↓
-Python / Pandas cleaning and validation
-        ↓
-Processed analytical datasets
-        ↓
-PostgreSQL in Docker
-        ↓
-SQL analysis and provider benchmarking
-        ↓
-Power BI data model + DAX
-        ↓
-Interactive portfolio dashboard
-        ↓
-Git / GitHub version control
-```
-
-## Current A&E Scope
-
-- Period: **April 2024 to August 2026**
-- Monthly files: **29**
-- Provider-month rows: **5,714**
-- Unique organisation codes observed: **207**
-- PostgreSQL analytical tables: **5**
-- Power BI report pages: **3**
-- Provider identity standardised in SQL using `org_code` and the latest observed organisation name
-
-## Key Findings
-
-### Demand
-
-- A&E attendances increased by **4.72%** between April 2024 and August 2026.
-- Highest monthly attendance: **July 2026 — 2,411,415**.
-- Lowest monthly attendance: **February 2025 — 2,008,463**.
-- Highest average daily demand: **June 2026 — approximately 78,742 attendances/day**.
-- Lowest average daily demand: **August 2024 — approximately 67,298 attendances/day**.
-
-### 4-Hour Performance
-
-- April 2024: **73.97%**
-- August 2026: **74.55%**
-- Change: **+0.58 percentage points**
-- Best month: **March 2026 — 76.63%**
-- Worst month: **December 2024 — 70.46%**
-
-### Emergency Admissions
-
-- Highest admission rate: **January 2025 — 19.04%**
-- Lowest admission rate: **June 2026 — 16.85%**
-- Admission rate changed from **18.67% in April 2024** to **17.34% in August 2026**, a fall of **1.33 percentage points**.
-
-### Month-on-Month Movement
-
-- Largest attendance increase: **March 2026 — +15.06%**
-- Largest attendance decrease: **February 2026 — -8.59%**
-- Largest 4-hour performance improvement: **March 2026 — +3.13 pp**
-- Largest deterioration: **September 2024 — -2.12 pp**
-
-## Provider & Type 1 Analysis
-
-An initial all-department provider analysis showed a moderate negative correlation of **-0.568** between demand and 4-hour performance.
-
-After restricting the comparison to **Type 1 major A&E departments**, the relationship largely disappeared. The Python analysis produced a correlation of approximately **0.028**, while the SQL implementation produced approximately **0.038** after provider-name standardisation.
-
-The near-zero Type 1 association contrasts with the all-department association. This is descriptive evidence that department mix and cohort definition matter; it does not identify causal explanations of provider performance.
-
-Examples from the high-volume Type 1 comparison:
-
-- Maidstone and Tunbridge Wells: **78.55%**
-- Calderdale and Huddersfield: **78.01%**
-- Nottingham University Hospitals: **46.79%**
-- University Hospitals of North Midlands: **48.02%**
-
-These comparisons are descriptive and should not be interpreted as causal assessments of provider quality.
-
-## SQL & PostgreSQL
-
-Processed A&E datasets are loaded into PostgreSQL running in Docker.
-
-The SQL analysis includes:
-
-- Data validation and row-count reconciliation
-- Provider-name consistency checks
-- Canonical provider dimension using `org_code`
-- CTEs
-- `RANK()`
-- `LAG()`
-- `PERCENTILE_CONT()`
-- `CORR()`
-- Weighted performance calculations
-- Provider ranking
-- High-volume benchmarking
-- Meaningful month-on-month change analysis
-
-A reusable SQL script is available at:
-
-```text
-sql/04_provider_analysis.sql
-```
-
-## Power BI Dashboard
-
-The Power BI report connects directly to PostgreSQL and uses a star-style model with:
-
-- `DateTable`
-- `provider_dimension`
-- `ae_monthly_summary`
-- `ae_provider_month`
-- `ae_type1_provider_month`
-
-Key DAX measures include:
-
-- Total A&E Attendances
-- Total Over 4 Hours
-- 4 Hour Performance %
-- Admissions via A&E
-- Admission Rate %
-- Provider A&E Attendances
-- Provider 4 Hour Performance %
-- Type 1 Attendances
-- Type 1 Performance %
-
-The report contains three pages:
-
-### Executive Overview
-
-National A&E KPIs, monthly demand and 4-hour performance trends, with Year and Month slicers.
-
-![Executive Overview](figures/powerbi/executive_overview.png)
-
-### Provider Performance Analysis
-
-Provider-level KPIs, Top 10 busiest providers, performance comparison and demand-vs-performance scatter analysis.
-
-![Provider Performance](figures/powerbi/provider_performance.png)
-
-### Type 1 A&E Benchmarking
-
-Type 1 KPIs, high-volume provider comparison, performance benchmarking, scatter analysis and monthly performance trends.
-
-![Type 1 Benchmarking](figures/powerbi/type1_benchmarking.png)
-
-The Power BI file is included in the repository:
-
-[Open the Power BI report file](powerbi/nhs_ae_dashboard.pbix)
-
-## Validation
-
-Power BI measures were checked against the Python and SQL outputs.
-
-Example — **April 2024**:
-
-- Total A&E Attendances: **2,163,149**
-- Total Over 4 Hours: **563,068**
-- 4 Hour Performance: **73.97%**
-- Admissions via A&E: **403,934**
-- Admission Rate: **18.67%**
-
-Provider-level and Type 1 measures were also checked for mathematical consistency under Power BI filters.
-
-## Data Quality Work
-
-The project includes real-world data-quality handling such as:
-
-- Inconsistent `TOTAL` row labels across monthly files
-- TOTAL rows appearing in different source columns
-- Inconsistent filename conventions
-- Internal reconciliation of processed totals; external headline reconciliation must use matching booked/non-booked definitions
-- Duplicate provider-month checks
-- Zero-attendance handling
-- Missing-rate validation
-- Month-length normalisation
-- Provider-name changes over time
-- Stable provider analysis using organisation codes
-
-## Technology Stack
-
-### Implemented
-
-- Python
-- Pandas
-- NumPy
-- Matplotlib
-- Jupyter Notebook
-- PostgreSQL
-- SQL
-- Power BI
-- DAX
-- Docker
-- Git
-- GitHub
-
-### Planned for the Wider Capstone
-
-- Automated testing
-- GitHub Actions CI/CD
-- Cloud deployment
-- Forecasting / machine learning
-- RTT waiting-list analytics
-- WLMDS demographic and inequality analytics
-
-## Project Structure
-
-```text
-nhs-hospital-performance-analytics/
-├── data/
-│   ├── raw/                         # Ignored by Git
-│   └── processed/
-├── figures/
-│   ├── ae/
-│   └── powerbi/
-│       ├── executive_overview.png
-│       ├── provider_performance.png
-│       └── type1_benchmarking.png
-├── notebooks/
-│   ├── 01_ae_data_understanding.ipynb
-│   └── 02_ae_sql_analysis.ipynb
-├── powerbi/
-│   └── nhs_ae_dashboard.pbix
-├── sql/
-│   └── 04_provider_analysis.sql
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-└── README.md
-```
-
-## Selected Python Visuals
-
-### Monthly A&E Attendances
-
-![Monthly A&E Attendances](figures/ae/monthly_ae_attendances.png)
-
-### 4-Hour Performance
-
-![4-Hour Performance](figures/ae/four_hour_performance.png)
-
-### Demand vs 4-Hour Performance
-
-![Demand vs 4-Hour Performance](figures/ae/ae_demand_vs_4hour_performance.png)
-
-### Type 1 Demand vs 4-Hour Performance
-
-![Type 1 Demand vs 4-Hour Performance](figures/ae/type1_demand_vs_4hour_performance.png)
-
-## Next Phase
-
-The A&E prototype connects preparation, SQL analysis and dashboard reporting. Measurement definitions, consistent provider cohorts and Power BI Top N selection remain under correction before treating it as a validated release.
-
-Next, the wider capstone will continue with:
-
-1. RTT Waiting List Analysis
-2. WLMDS Health Inequalities Analysis
-3. Integration of A&E + RTT + WLMDS
-4. Forecasting / machine learning
-5. Automated tests
-6. GitHub Actions CI/CD
-7. Cloud deployment
-
-## Final Capstone Direction
-
-The final goal is an **NHS Hospital Performance & Waiting List Intelligence Platform** integrating:
-
-- A&E performance
-- RTT waiting lists
-- WLMDS demographic and inequality data
-- PostgreSQL
-- Power BI
-- Forecasting / machine learning
-- Docker
-- CI/CD
-- Cloud infrastructure
-
-## Disclaimer
-
-This is a portfolio and learning project based on publicly available NHS data. Analytical relationships shown here should not be interpreted as proof of causation. Provider performance may be influenced by factors not included in the current datasets, including patient acuity, staffing, capacity, case mix and service configuration.
-
-
-## Reproduce stable-code cohort checks
-
-From the repository root, run:
+**Reproduce the independent cohorts** from the repository root with Python 3.9 or later (standard library):
 
 ```bash
 python scripts/validate_provider_cohorts.py --min-months 24
 ```
 
-Python 3.9+ standard library only. The script validates unique provider-month keys and count bounds, groups by organisation code, requires at least 24 positive-attendance months, calculates weighted performance, correlates mean monthly attendance with performance and returns the ten busiest eligible providers by total attendance. Different departments can have different eligible cohorts; these are not paired-provider estimates.
+The validator calculates each extract separately. The matched sensitivity check above is a separate calculation. For the full-period eligible Type 1 cohort the validator ranks RRK first with 994,229 attendances. That result applies to this eligibility rule and period; a dashboard slicer can change the applicable reference ranking.
 
-With the currently committed processed CSVs: 180 eligible all-department providers (correlation approximately -0.574) and 121 Type 1 providers (approximately 0.038). The Type 1 highest-volume eligible provider is University Hospitals Birmingham (RRK), 994,229 attendances. This executable check does not repair the existing PBIX visuals or reconcile booked attendances to official national totals.
+## Reading the measures
+
+- **Attendance and four-hour performance.** In the processed April 2024 counts, 563,068 of 2,163,149 attendances exceeded four hours. The weighted within-four-hours figure is 73.97%. This cross-check uses the non-booked columns.
+- **Admissions.** The numerator sums emergency admissions via Type 1, Type 2 and other A&E departments, excluding the separate “other emergency admissions” category. The denominator sums the non-booked attendance columns across those departments. For April 2024 the historical ratio is 403,934 / 2,163,149 = 18.67%. The extracts do not establish that numerator and denominator cover the same encounters. Labels such as “Admission Rate %” describe this aggregate ratio only; they cannot estimate a patient's probability of admission.
+
+## Power BI previews
+
+**Executive overview.** Historical dashboard view. Attendance and four-hour KPIs use the non-booked scope above. Interpret the admissions percentage only as an unmatched aggregate ratio.
+
+![Executive overview showing monthly attendance and four-hour KPIs](figures/powerbi/executive_overview.png)
+
+**Provider performance.** Historical all-department view. The saved all-department Top N filters use provider attendance. Independent validation of the displayed ordering, slicers and DAX after refresh is outstanding. Use the cohort table above for correlations.
+
+![Historical all-department provider comparison](figures/powerbi/provider_performance.png)
+
+**Type 1 benchmarking — provisional ranking.** In the saved report, both *Top 10 Busiest Type 1 Providers* and *4-Hour Performance — Top 10 Type 1 Providers* select their ten providers using an aggregation of provider name. Neither chart establishes the ten busiest providers by Type 1 attendance. Both need their selection measure corrected and their membership checked under the active filters before a new preview is exported.
+
+![Historical Type 1 dashboard with two unvalidated Top 10 selections](figures/powerbi/type1_benchmarking.png)
+
+## Python figures and historical outputs
+
+The original images are retained for inspection. The two scatterplots use the earlier notebook grouping, which includes provider name alongside code. Their historical results (about −0.568 and +0.028) are superseded for stable-code comparisons by the table above.
+
+| Figure | Interpretation |
+|---|---|
+| [Monthly attendances](figures/ae/monthly_ae_attendances.png) · [Average daily attendances](figures/ae/average_daily_ae_attendances.png) · [Month-on-month attendance change](figures/ae/ae_month_on_month_attendance_change.png) | Non-booked activity. The daily series adjusts for the number of days in a month. |
+| [Four-hour performance](figures/ae/four_hour_performance.png) | Monthly performance for the processed attendance population. |
+| [Admissions ratio](figures/ae/ae_admission_rate.png) | Historical “admission rate” label. Numerator and denominator have unmatched encounter coverage. |
+| [Busiest A&E organisations](figures/ae/top_10_busiest_ae_organisations.png) | Historical all-department notebook ranking. Provider name changes can split activity in legacy summaries. |
+| [All-department scatterplot](figures/ae/ae_demand_vs_4hour_performance.png) | Historical provider grouping and independently eligible population; do not read as the matched result. |
+| [Type 1 scatterplot](figures/ae/type1_demand_vs_4hour_performance.png) | Historical Type 1 grouping; comparison with the all-department plot does not isolate department type. |
+
+## Outstanding validation and future work
+
+1. Correct both Power BI Type 1 Top N filters to use Type 1 attendances. Check membership, ties, weighted KPIs and slicer behaviour against independent aggregates, then refresh and export new previews.
+2. Execute the checked-in queries in PostgreSQL and cross-check Python, SQL and Power BI on identical provider codes, months and denominators, including the matched sensitivity calculation.
+3. Reconcile monthly source releases, booked activity and admissions definitions before making national headline or patient-level interpretations.
+
+A repeatable Python data check and local Docker configuration are present. An automated test suite, GitHub Actions CI/CD, cloud deployment, forecasting, RTT waiting-list analysis and WLMDS inequalities analysis are future work.
