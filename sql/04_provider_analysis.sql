@@ -25,7 +25,7 @@ SELECT
         ORDER BY total_attendances DESC
     ) AS attendance_rank
 FROM provider_totals
-ORDER BY attendance_rank
+ORDER BY attendance_rank, org_code
 LIMIT 10;
 
 
